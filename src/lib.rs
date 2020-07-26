@@ -25,7 +25,6 @@
 
 #![forbid(unsafe_code)]
 #![warn(missing_docs, missing_debug_implementations, rust_2018_idioms)]
-#![cfg_attr(docsrs, feature(doc_cfg))]
 
 use std::ffi::OsString;
 use std::fmt;
@@ -1401,8 +1400,7 @@ impl Default for OpenOptions {
     }
 }
 
-#[cfg(any(unix, docsrs))]
-#[cfg_attr(docsrs, doc(cfg(unix)))]
+#[cfg(unix)]
 impl std::os::unix::fs::OpenOptionsExt for OpenOptions {
     fn mode(&mut self, mode: u32) -> &mut Self {
         self.0.mode(mode);
@@ -1416,8 +1414,7 @@ impl std::os::unix::fs::OpenOptionsExt for OpenOptions {
 }
 
 /// Unix-specific extensions.
-#[cfg(any(unix, docsrs))]
-#[cfg_attr(docsrs, doc(cfg(unix)))]
+#[cfg(unix)]
 pub mod unix {
     use super::*;
 
@@ -1440,8 +1437,7 @@ pub mod unix {
 }
 
 /// Windows-specific extensions.
-#[cfg(any(windows, docsrs))]
-#[cfg_attr(docsrs, doc(cfg(windows)))]
+#[cfg(windows)]
 pub mod windows {
     use super::*;
 

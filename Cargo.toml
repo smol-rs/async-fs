@@ -15,6 +15,3 @@ readme = "README.md"
 [dependencies]
 blocking = "0.5.0"
 futures-lite = "0.1.9"
-
-[package.metadata.docs.rs]
-rustdoc-args = ["--cfg", "docsrs"]
