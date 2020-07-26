@@ -1058,9 +1058,9 @@ impl std::os::unix::io::AsRawFd for File {
 }
 
 #[cfg(windows)]
-impl std::os::windows::io::AsRawSocket for File {
-    fn as_raw_socket(&self) -> std::os::windows::io::RawSocket {
-        self.file.as_raw_socket()
+impl std::os::windows::io::AsRawHandle for File {
+    fn as_raw_handle(&self) -> std::os::windows::io::RawHandle {
+        self.file.as_raw_handle()
     }
 }
 
