@@ -440,6 +440,7 @@ impl Clone for DirEntry {
     }
 }
 
+#[cfg(unix)]
 impl std::os::unix::fs::DirEntryExt for DirEntry {
     fn ino(&self) -> u64 {
         self.0.ino()
@@ -766,6 +767,7 @@ impl DirBuilder {
     }
 }
 
+#[cfg(unix)]
 impl std::os::unix::fs::DirBuilderExt for DirBuilder {
     fn mode(&mut self, mode: u32) -> &mut Self {
         self.mode = Some(mode);
