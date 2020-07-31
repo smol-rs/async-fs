@@ -1063,6 +1063,12 @@ impl std::os::windows::io::AsRawHandle for File {
     }
 }
 
+impl From<std::fs::File> for File {
+    fn from(inner: std::fs::File) -> File {
+        File::new(inner)
+    }
+}
+
 impl AsyncRead for File {
     fn poll_read(
         mut self: Pin<&mut Self>,
