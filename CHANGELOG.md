@@ -1,3 +1,7 @@
+# Version 1.1.1
+
+- Update dependencies.
+
 # Version 1.1.0
 
 - Implement `From<std::fs::File>` for `File`.

@@ -1,6 +1,6 @@
 [package]
 name = "async-fs"
-version = "1.1.0"
+version = "1.1.1"
 authors = ["Stjepan Glavina <stjepang@gmail.com>"]
 edition = "2018"
 description = "Async filesystem primitives"
@@ -13,5 +13,5 @@ categories = ["asynchronous", "concurrency"]
 readme = "README.md"
 
 [dependencies]
-blocking = "0.5.0"
-futures-lite = "0.1.9"
+blocking = "0.6.0"
+futures-lite = "1.0.0"

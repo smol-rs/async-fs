@@ -65,7 +65,7 @@ pub use std::fs::{FileType, Metadata, Permissions};
 /// ```
 pub async fn canonicalize<P: AsRef<Path>>(path: P) -> io::Result<PathBuf> {
     let path = path.as_ref().to_owned();
-    unblock!(std::fs::canonicalize(&path))
+    unblock(move || std::fs::canonicalize(&path)).await
 }
 
 /// Copies a file to a new location.
@@ -97,7 +97,7 @@ pub async fn canonicalize<P: AsRef<Path>>(path: P) -> io::Result<PathBuf> {
 pub async fn copy<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> io::Result<u64> {
     let src = src.as_ref().to_owned();
     let dst = dst.as_ref().to_owned();
-    unblock!(std::fs::copy(&src, &dst))
+    unblock(move || std::fs::copy(&src, &dst)).await
 }
 
 /// Creates a directory.
@@ -123,7 +123,7 @@ pub async fn copy<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> io::Result<
 /// ```
 pub async fn create_dir<P: AsRef<Path>>(path: P) -> io::Result<()> {
     let path = path.as_ref().to_owned();
-    unblock!(std::fs::create_dir(&path))
+    unblock(move || std::fs::create_dir(&path)).await
 }
 
 /// Creates a directory and its parent directories if they are missing.
@@ -145,7 +145,7 @@ pub async fn create_dir<P: AsRef<Path>>(path: P) -> io::Result<()> {
 /// ```
 pub async fn create_dir_all<P: AsRef<Path>>(path: P) -> io::Result<()> {
     let path = path.as_ref().to_owned();
-    unblock!(std::fs::create_dir_all(&path))
+    unblock(move || std::fs::create_dir_all(&path)).await
 }
 
 /// Creates a hard link on the filesystem.
@@ -170,7 +170,7 @@ pub async fn create_dir_all<P: AsRef<Path>>(path: P) -> io::Result<()> {
 pub async fn hard_link<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> io::Result<()> {
     let src = src.as_ref().to_owned();
     let dst = dst.as_ref().to_owned();
-    unblock!(std::fs::hard_link(&src, &dst))
+    unblock(move || std::fs::hard_link(&src, &dst)).await
 }
 
 /// Reads metadata for a path.
@@ -196,7 +196,7 @@ pub async fn hard_link<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> io::Re
 /// ```
 pub async fn metadata<P: AsRef<Path>>(path: P) -> io::Result<Metadata> {
     let path = path.as_ref().to_owned();
-    unblock!(std::fs::metadata(path))
+    unblock(move || std::fs::metadata(path)).await
 }
 
 /// Reads the entire contents of a file as raw bytes.
@@ -224,7 +224,7 @@ pub async fn metadata<P: AsRef<Path>>(path: P) -> io::Result<Metadata> {
 /// ```
 pub async fn read<P: AsRef<Path>>(path: P) -> io::Result<Vec<u8>> {
     let path = path.as_ref().to_owned();
-    unblock!(std::fs::read(&path))
+    unblock(move || std::fs::read(&path)).await
 }
 
 /// Returns a stream of entries in a directory.
@@ -256,7 +256,7 @@ pub async fn read<P: AsRef<Path>>(path: P) -> io::Result<Vec<u8>> {
 /// ```
 pub async fn read_dir<P: AsRef<Path>>(path: P) -> io::Result<ReadDir> {
     let path = path.as_ref().to_owned();
-    unblock!(std::fs::read_dir(&path)).map(|inner| ReadDir(State::Idle(Some(inner))))
+    unblock(move || std::fs::read_dir(&path).map(|inner| ReadDir(State::Idle(Some(inner))))).await
 }
 
 /// A stream of entries in a directory.
@@ -290,12 +290,10 @@ impl Stream for ReadDir {
                     let mut inner = opt.take().unwrap();
 
                     // Start the operation asynchronously.
-                    self.0 = State::Busy(Box::pin(async move {
-                        unblock! {
-                            let next = inner.next();
-                            (inner, next)
-                        }
-                    }));
+                    self.0 = State::Busy(Box::pin(unblock(move || {
+                        let next = inner.next();
+                        (inner, next)
+                    })));
                 }
                 // Poll the asynchronous operation the file is currently blocked on.
                 State::Busy(task) => {
@@ -370,7 +368,7 @@ impl DirEntry {
     /// ```
     pub async fn metadata(&self) -> io::Result<Metadata> {
         let inner = self.0.clone();
-        unblock!(inner.metadata())
+        unblock(move || inner.metadata()).await
     }
 
     /// Reads the file type for this entry.
@@ -403,7 +401,7 @@ impl DirEntry {
     /// ```
     pub async fn file_type(&self) -> io::Result<FileType> {
         let inner = self.0.clone();
-        unblock!(inner.file_type())
+        unblock(move || inner.file_type()).await
     }
 
     /// Returns the bare name of this entry without the leading path.
@@ -464,7 +462,7 @@ impl std::os::unix::fs::DirEntryExt for DirEntry {
 /// ```
 pub async fn read_link<P: AsRef<Path>>(path: P) -> io::Result<PathBuf> {
     let path = path.as_ref().to_owned();
-    unblock!(std::fs::read_link(&path))
+    unblock(move || std::fs::read_link(&path)).await
 }
 
 /// Reads the entire contents of a file as a string.
@@ -493,7 +491,7 @@ pub async fn read_link<P: AsRef<Path>>(path: P) -> io::Result<PathBuf> {
 /// ```
 pub async fn read_to_string<P: AsRef<Path>>(path: P) -> io::Result<String> {
     let path = path.as_ref().to_owned();
-    unblock!(std::fs::read_to_string(&path))
+    unblock(move || std::fs::read_to_string(&path)).await
 }
 
 /// Removes an empty directory.
@@ -518,7 +516,7 @@ pub async fn read_to_string<P: AsRef<Path>>(path: P) -> io::Result<String> {
 /// ```
 pub async fn remove_dir<P: AsRef<Path>>(path: P) -> io::Result<()> {
     let path = path.as_ref().to_owned();
-    unblock!(std::fs::remove_dir(&path))
+    unblock(move || std::fs::remove_dir(&path)).await
 }
 
 /// Removes a directory and all of its contents.
@@ -540,7 +538,7 @@ pub async fn remove_dir<P: AsRef<Path>>(path: P) -> io::Result<()> {
 /// ```
 pub async fn remove_dir_all<P: AsRef<Path>>(path: P) -> io::Result<()> {
     let path = path.as_ref().to_owned();
-    unblock!(std::fs::remove_dir_all(&path))
+    unblock(move || std::fs::remove_dir_all(&path)).await
 }
 
 /// Removes a file.
@@ -562,7 +560,7 @@ pub async fn remove_dir_all<P: AsRef<Path>>(path: P) -> io::Result<()> {
 /// ```
 pub async fn remove_file<P: AsRef<Path>>(path: P) -> io::Result<()> {
     let path = path.as_ref().to_owned();
-    unblock!(std::fs::remove_file(&path))
+    unblock(move || std::fs::remove_file(&path)).await
 }
 
 /// Renames a file or directory to a new location.
@@ -589,7 +587,7 @@ pub async fn remove_file<P: AsRef<Path>>(path: P) -> io::Result<()> {
 pub async fn rename<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> io::Result<()> {
     let src = src.as_ref().to_owned();
     let dst = dst.as_ref().to_owned();
-    unblock!(std::fs::rename(&src, &dst))
+    unblock(move || std::fs::rename(&src, &dst)).await
 }
 
 /// Changes the permissions of a file or directory.
@@ -613,7 +611,7 @@ pub async fn rename<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> io::Resul
 /// ```
 pub async fn set_permissions<P: AsRef<Path>>(path: P, perm: Permissions) -> io::Result<()> {
     let path = path.as_ref().to_owned();
-    unblock!(std::fs::set_permissions(path, perm))
+    unblock(move || std::fs::set_permissions(path, perm)).await
 }
 
 /// Reads metadata for a path without following symbolic links.
@@ -638,7 +636,7 @@ pub async fn set_permissions<P: AsRef<Path>>(path: P, perm: Permissions) -> io::
 /// ```
 pub async fn symlink_metadata<P: AsRef<Path>>(path: P) -> io::Result<Metadata> {
     let path = path.as_ref().to_owned();
-    unblock!(std::fs::symlink_metadata(path))
+    unblock(move || std::fs::symlink_metadata(path)).await
 }
 
 /// Writes a slice of bytes as the new contents of a file.
@@ -664,7 +662,7 @@ pub async fn symlink_metadata<P: AsRef<Path>>(path: P) -> io::Result<Metadata> {
 pub async fn write<P: AsRef<Path>, C: AsRef<[u8]>>(path: P, contents: C) -> io::Result<()> {
     let path = path.as_ref().to_owned();
     let contents = contents.as_ref().to_owned();
-    unblock!(std::fs::write(&path, contents))
+    unblock(move || std::fs::write(&path, contents)).await
 }
 
 /// A builder for creating directories with configurable options.
@@ -762,7 +760,7 @@ impl DirBuilder {
         }
 
         let path = path.as_ref().to_owned();
-        async move { unblock!(builder.create(path)) }
+        unblock(move || builder.create(path))
     }
 }
 
@@ -866,7 +864,7 @@ impl File {
     /// ```
     pub async fn open<P: AsRef<Path>>(path: P) -> io::Result<File> {
         let path = path.as_ref().to_owned();
-        let file = unblock!(std::fs::File::open(&path))?;
+        let file = unblock(move || std::fs::File::open(&path)).await?;
         Ok(File::new(file))
     }
 
@@ -897,7 +895,7 @@ impl File {
     /// ```
     pub async fn create<P: AsRef<Path>>(path: P) -> io::Result<File> {
         let path = path.as_ref().to_owned();
-        let file = unblock!(std::fs::File::create(&path))?;
+        let file = unblock(move || std::fs::File::create(&path)).await?;
         Ok(File::new(file))
     }
 
@@ -924,7 +922,7 @@ impl File {
     pub async fn sync_all(&mut self) -> io::Result<()> {
         self.flush().await?;
         let file = self.file.clone();
-        unblock!(file.sync_all())
+        unblock(move || file.sync_all()).await
     }
 
     /// Synchronizes OS-internal buffered contents to disk.
@@ -954,7 +952,7 @@ impl File {
     pub async fn sync_data(&mut self) -> io::Result<()> {
         self.flush().await?;
         let file = self.file.clone();
-        unblock!(file.sync_data())
+        unblock(move || file.sync_data()).await
     }
 
     /// Truncates or extends the file.
@@ -979,7 +977,7 @@ impl File {
     pub async fn set_len(&mut self, size: u64) -> io::Result<()> {
         self.flush().await?;
         let file = self.file.clone();
-        unblock!(file.set_len(size))
+        unblock(move || file.set_len(size)).await
     }
 
     /// Reads the file's metadata.
@@ -996,7 +994,7 @@ impl File {
     /// ```
     pub async fn metadata(&self) -> io::Result<Metadata> {
         let file = self.file.clone();
-        unblock!(file.metadata())
+        unblock(move || file.metadata()).await
     }
 
     /// Changes the permissions on the file.
@@ -1023,7 +1021,7 @@ impl File {
     /// ```
     pub async fn set_permissions(&self, perm: Permissions) -> io::Result<()> {
         let file = self.file.clone();
-        unblock!(file.set_permissions(perm))
+        unblock(move || file.set_permissions(perm)).await
     }
 
     /// Repositions the cursor after reading.
@@ -1394,7 +1392,7 @@ impl OpenOptions {
         let path = path.as_ref().to_owned();
         let options = self.0.clone();
         async move {
-            let file = unblock!(options.open(path))?;
+            let file = unblock(move || options.open(path)).await?;
             Ok(File::new(file))
         }
     }
@@ -1438,7 +1436,7 @@ pub mod unix {
     pub async fn symlink<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> io::Result<()> {
         let src = src.as_ref().to_owned();
         let dst = dst.as_ref().to_owned();
-        unblock!(std::os::unix::fs::symlink(&src, &dst))
+        unblock(move || std::os::unix::fs::symlink(&src, &dst)).await
     }
 }
 
@@ -1461,7 +1459,7 @@ pub mod windows {
     pub async fn symlink_dir<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> io::Result<()> {
         let src = src.as_ref().to_owned();
         let dst = dst.as_ref().to_owned();
-        unblock!(std::os::windows::fs::symlink_dir(&src, &dst))
+        unblock(move || std::os::windows::fs::symlink_dir(&src, &dst)).await
     }
 
     /// Creates a new file symbolic link on the filesystem.
@@ -1478,6 +1476,6 @@ pub mod windows {
     pub async fn symlink_file<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> io::Result<()> {
         let src = src.as_ref().to_owned();
         let dst = dst.as_ref().to_owned();
-        unblock!(std::os::windows::fs::symlink_file(&src, &dst))
+        unblock(move || std::os::windows::fs::symlink_file(&src, &dst)).await
     }
 }
