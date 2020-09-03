@@ -823,7 +823,9 @@ pub struct File {
     unblock: Unblock<ArcFile>,
 
     /// Logical file cursor, tracked when reading from the file.
-    read_pos: Option<u64>,
+    ///
+    /// This will be set to an error if the file is not seekable.
+    read_pos: Option<io::Result<u64>>,
 }
 
 impl File {
@@ -1033,10 +1035,10 @@ impl File {
     /// After reading ends, if we decide to perform a write or a seek operation, the real file
     /// cursor must first be repositioned back to the correct logical position.
     fn poll_reposition(&mut self, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        if let Some(read_pos) = self.read_pos {
+        if let Some(Ok(read_pos)) = self.read_pos {
             ready!(Pin::new(&mut self.unblock).poll_seek(cx, SeekFrom::Start(read_pos)))?;
-            self.read_pos = None;
         }
+        self.read_pos = None;
         Poll::Ready(Ok(()))
     }
 }
@@ -1076,15 +1078,14 @@ impl AsyncRead for File {
         // Before reading begins, remember the current cursor position.
         if self.read_pos.is_none() {
             // Initialize the logical cursor to the current position in the file.
-            self.read_pos = Some(ready!(self.as_mut().poll_seek(cx, SeekFrom::Current(0)))?);
+            self.read_pos = Some(ready!(self.as_mut().poll_seek(cx, SeekFrom::Current(0))));
         }
 
         let n = ready!(Pin::new(&mut self.unblock).poll_read(cx, buf))?;
 
-        // Update the logical cursor.
-        match self.read_pos.as_mut() {
-            None => unreachable!(),
-            Some(p) => *p += n as u64,
+        // Update the logical cursor if the file is seekable.
+        if let Some(Ok(pos)) = self.read_pos.as_mut() {
+            *pos += n as u64;
         }
 
         Poll::Ready(Ok(n))
