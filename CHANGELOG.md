@@ -1,3 +1,7 @@
+# Version 1.1.2
+
+- Do not reposition the cursor if the file is not seekable.
+
 # Version 1.1.1
 
 - Update dependencies.
