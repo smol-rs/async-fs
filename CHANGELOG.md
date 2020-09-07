@@ -1,3 +1,7 @@
+# Version 1.2.0
+
+- Update `blocking` to v1.0
+
 # Version 1.1.2
 
 - Do not reposition the cursor if the file is not seekable.
