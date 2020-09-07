@@ -826,11 +826,14 @@ pub struct File {
     ///
     /// This will be set to an error if the file is not seekable.
     read_pos: Option<io::Result<u64>>,
+
+    /// Set to `true` if the file needs flushing.
+    is_dirty: bool,
 }
 
 impl File {
     /// Creates an async file from a blocking file.
-    fn new(inner: std::fs::File) -> File {
+    fn new(inner: std::fs::File, is_dirty: bool) -> File {
         let file = Arc::new(inner);
         let unblock = Unblock::new(ArcFile(file.clone()));
         let read_pos = None;
@@ -838,6 +841,7 @@ impl File {
             file,
             unblock,
             read_pos,
+            is_dirty,
         }
     }
 
@@ -867,7 +871,7 @@ impl File {
     pub async fn open<P: AsRef<Path>>(path: P) -> io::Result<File> {
         let path = path.as_ref().to_owned();
         let file = unblock(move || std::fs::File::open(&path)).await?;
-        Ok(File::new(file))
+        Ok(File::new(file, false))
     }
 
     /// Opens a file in write-only mode.
@@ -898,7 +902,7 @@ impl File {
     pub async fn create<P: AsRef<Path>>(path: P) -> io::Result<File> {
         let path = path.as_ref().to_owned();
         let file = unblock(move || std::fs::File::create(&path)).await?;
-        Ok(File::new(file))
+        Ok(File::new(file, false))
     }
 
     /// Synchronizes OS-internal buffered contents and metadata to disk.
@@ -1065,7 +1069,7 @@ impl std::os::windows::io::AsRawHandle for File {
 
 impl From<std::fs::File> for File {
     fn from(inner: std::fs::File) -> File {
-        File::new(inner)
+        File::new(inner, true)
     }
 }
 
@@ -1099,11 +1103,16 @@ impl AsyncWrite for File {
         buf: &[u8],
     ) -> Poll<io::Result<usize>> {
         ready!(self.poll_reposition(cx))?;
+        self.is_dirty = true;
         Pin::new(&mut self.unblock).poll_write(cx, buf)
     }
 
     fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        Pin::new(&mut self.unblock).poll_flush(cx)
+        if self.is_dirty {
+            ready!(Pin::new(&mut self.unblock).poll_flush(cx))?;
+            self.is_dirty = false;
+        }
+        Poll::Ready(Ok(()))
     }
 
     fn poll_close(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
@@ -1394,7 +1403,7 @@ impl OpenOptions {
         let options = self.0.clone();
         async move {
             let file = unblock(move || options.open(path)).await?;
-            Ok(File::new(file))
+            Ok(File::new(file, false))
         }
     }
 }
