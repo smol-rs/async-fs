@@ -1,3 +1,7 @@
+# Version 1.2.1
+
+- Optimization: Don't flush if the file is already flushed.
+
 # Version 1.2.0
 
 - Update `blocking` to v1.0
