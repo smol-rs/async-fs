@@ -1440,10 +1440,43 @@ impl std::os::unix::fs::OpenOptionsExt for OpenOptions {
     }
 }
 
+#[cfg(windows)]
+impl std::os::windows::fs::OpenOptionsExt for OpenOptions {
+    fn access_mode(&mut self, access: u32) -> &mut Self {
+        self.0.access_mode(access);
+        self
+    }
+
+    fn share_mode(&mut self, val: u32) -> &mut Self {
+        self.0.share_mode(val);
+        self
+    }
+
+    fn custom_flags(&mut self, flags: u32) -> &mut Self {
+        self.0.custom_flags(flags);
+        self
+    }
+
+    fn attributes(&mut self, val: u32) -> &mut Self {
+        self.0.attributes(val);
+        self
+    }
+
+    fn security_qos_flags(&mut self, flags: u32) -> &mut Self {
+        self.0.security_qos_flags(flags);
+        self
+    }
+}
+
 /// Unix-specific extensions.
 #[cfg(unix)]
 pub mod unix {
     use super::*;
+
+    #[doc(no_inline)]
+    pub use std::os::unix::fs::{
+        DirBuilderExt, DirEntryExt, FileTypeExt, MetadataExt, OpenOptionsExt, PermissionsExt,
+    };
 
     /// Creates a new symbolic link on the filesystem.
     ///
@@ -1467,6 +1500,9 @@ pub mod unix {
 #[cfg(windows)]
 pub mod windows {
     use super::*;
+
+    #[doc(no_inline)]
+    pub use std::os::unix::fs::{MetadataExt, OpenOptionsExt};
 
     /// Creates a new directory symbolic link on the filesystem.
     ///
