@@ -1,3 +1,9 @@
+# Version 1.3.0
+
+- Implement `FromRawFd`/`FromRawHandle` for `File`.
+- Implement `OpenOptionsExt` for `OpenOptions` on Windows.
+- Re-export some extension traits into OS-specific modules.
+
 # Version 1.2.1
 
 - Optimization: Don't flush if the file is already flushed.
