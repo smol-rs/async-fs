@@ -23,7 +23,6 @@
 //! # std::io::Result::Ok(()) });
 //! ```
 
-#![forbid(unsafe_code)]
 #![warn(missing_docs, missing_debug_implementations, rust_2018_idioms)]
 
 use std::ffi::OsString;
@@ -1053,6 +1052,26 @@ impl fmt::Debug for File {
     }
 }
 
+impl From<std::fs::File> for File {
+    fn from(inner: std::fs::File) -> File {
+        File::new(inner, true)
+    }
+}
+
+#[cfg(unix)]
+impl std::os::unix::io::FromRawFd for File {
+    unsafe fn from_raw_fd(raw: std::os::unix::io::RawFd) -> File {
+        File::from(std::fs::File::from_raw_fd(raw))
+    }
+}
+
+#[cfg(windows)]
+impl std::os::windows::io::FromRawHandle for File {
+    unsafe fn from_raw_handle(raw: std::os::windows::io::RawHandle) -> File {
+        File::from(std::fs::File::from_raw_handle(raw))
+    }
+}
+
 #[cfg(unix)]
 impl std::os::unix::io::AsRawFd for File {
     fn as_raw_fd(&self) -> std::os::unix::io::RawFd {
@@ -1064,12 +1083,6 @@ impl std::os::unix::io::AsRawFd for File {
 impl std::os::windows::io::AsRawHandle for File {
     fn as_raw_handle(&self) -> std::os::windows::io::RawHandle {
         self.file.as_raw_handle()
-    }
-}
-
-impl From<std::fs::File> for File {
-    fn from(inner: std::fs::File) -> File {
-        File::new(inner, true)
     }
 }
 
