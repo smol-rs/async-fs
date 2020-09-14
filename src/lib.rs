@@ -1502,7 +1502,7 @@ pub mod windows {
     use super::*;
 
     #[doc(no_inline)]
-    pub use std::os::unix::fs::{MetadataExt, OpenOptionsExt};
+    pub use std::os::windows::fs::{MetadataExt, OpenOptionsExt};
 
     /// Creates a new directory symbolic link on the filesystem.
     ///
