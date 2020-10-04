@@ -1,3 +1,7 @@
+# Version 1.4.0
+
+- Define new extension traits instead of implementing those from `std`.
+
 # Version 1.3.0
 
 - Implement `FromRawFd`/`FromRawHandle` for `File`.
