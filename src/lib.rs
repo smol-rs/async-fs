@@ -34,6 +34,12 @@ use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
 
+#[cfg(unix)]
+use std::os::unix::fs::{DirEntryExt as _, OpenOptionsExt as _};
+
+#[cfg(windows)]
+use std::os::windows::fs::OpenOptionsExt as _;
+
 use blocking::{unblock, Unblock};
 use futures_lite::io::{AsyncRead, AsyncSeek, AsyncWrite, AsyncWriteExt};
 use futures_lite::stream::Stream;
@@ -247,8 +253,7 @@ pub async fn read<P: AsRef<Path>>(path: P) -> io::Result<Vec<u8>> {
 ///
 /// let mut entries = async_fs::read_dir(".").await?;
 ///
-/// while let Some(res) = entries.next().await {
-///     let entry = res?;
+/// while let Some(entry) = entries.try_next().await? {
 ///     println!("{}", entry.file_name().to_string_lossy());
 /// }
 /// # std::io::Result::Ok(()) });
@@ -326,8 +331,7 @@ impl DirEntry {
     /// # futures_lite::future::block_on(async {
     /// let mut dir = async_fs::read_dir(".").await?;
     ///
-    /// while let Some(res) = dir.next().await {
-    ///     let entry = res?;
+    /// while let Some(entry) = dir.try_next().await? {
     ///     println!("{:?}", entry.path());
     /// }
     /// # std::io::Result::Ok(()) });
@@ -359,8 +363,7 @@ impl DirEntry {
     /// # futures_lite::future::block_on(async {
     /// let mut dir = async_fs::read_dir(".").await?;
     ///
-    /// while let Some(res) = dir.next().await {
-    ///     let entry = res?;
+    /// while let Some(entry) = dir.try_next().await? {
     ///     println!("{:?}", entry.metadata().await?);
     /// }
     /// # std::io::Result::Ok(()) });
@@ -392,8 +395,7 @@ impl DirEntry {
     /// # futures_lite::future::block_on(async {
     /// let mut dir = async_fs::read_dir(".").await?;
     ///
-    /// while let Some(res) = dir.next().await {
-    ///     let entry = res?;
+    /// while let Some(entry) = dir.try_next().await? {
     ///     println!("{:?}", entry.file_type().await?);
     /// }
     /// # std::io::Result::Ok(()) });
@@ -413,8 +415,7 @@ impl DirEntry {
     /// # futures_lite::future::block_on(async {
     /// let mut dir = async_fs::read_dir(".").await?;
     ///
-    /// while let Some(res) = dir.next().await {
-    ///     let entry = res?;
+    /// while let Some(entry) = dir.try_next().await? {
     ///     println!("{}", entry.file_name().to_string_lossy());
     /// }
     /// # std::io::Result::Ok(()) });
@@ -437,7 +438,7 @@ impl Clone for DirEntry {
 }
 
 #[cfg(unix)]
-impl std::os::unix::fs::DirEntryExt for DirEntry {
+impl unix::DirEntryExt for DirEntry {
     fn ino(&self) -> u64 {
         self.0.ino()
     }
@@ -764,7 +765,7 @@ impl DirBuilder {
 }
 
 #[cfg(unix)]
-impl std::os::unix::fs::DirBuilderExt for DirBuilder {
+impl unix::DirBuilderExt for DirBuilder {
     fn mode(&mut self, mode: u32) -> &mut Self {
         self.mode = Some(mode);
         self
@@ -1428,7 +1429,7 @@ impl Default for OpenOptions {
 }
 
 #[cfg(unix)]
-impl std::os::unix::fs::OpenOptionsExt for OpenOptions {
+impl unix::OpenOptionsExt for OpenOptions {
     fn mode(&mut self, mode: u32) -> &mut Self {
         self.0.mode(mode);
         self
@@ -1441,7 +1442,7 @@ impl std::os::unix::fs::OpenOptionsExt for OpenOptions {
 }
 
 #[cfg(windows)]
-impl std::os::windows::fs::OpenOptionsExt for OpenOptions {
+impl windows::OpenOptionsExt for OpenOptions {
     fn access_mode(&mut self, access: u32) -> &mut Self {
         self.0.access_mode(access);
         self
@@ -1474,9 +1475,7 @@ pub mod unix {
     use super::*;
 
     #[doc(no_inline)]
-    pub use std::os::unix::fs::{
-        DirBuilderExt, DirEntryExt, FileTypeExt, MetadataExt, OpenOptionsExt, PermissionsExt,
-    };
+    pub use std::os::unix::fs::{FileTypeExt, MetadataExt, PermissionsExt};
 
     /// Creates a new symbolic link on the filesystem.
     ///
@@ -1494,6 +1493,92 @@ pub mod unix {
         let dst = dst.as_ref().to_owned();
         unblock(move || std::os::unix::fs::symlink(&src, &dst)).await
     }
+
+    /// Unix-specific extensions to [`DirBuilder`].
+    pub trait DirBuilderExt {
+        /// Sets the mode to create new directories with.
+        ///
+        /// This option defaults to `0o777`.
+        ///
+        /// # Examples
+        ///
+        /// ```no_run
+        /// use async_fs::{DirBuilder, unix::DirBuilderExt};
+        ///
+        /// let mut builder = DirBuilder::new();
+        /// builder.mode(0o755);
+        /// ```
+        fn mode(&mut self, mode: u32) -> &mut Self;
+    }
+
+    /// Unix-specific extension methods for [`DirEntry`].
+    pub trait DirEntryExt {
+        /// Returns the underlying `d_ino` field in the contained `dirent` structure.
+        ///
+        /// # Examples
+        ///
+        /// ```no_run
+        /// use async_fs::unix::DirEntryExt;
+        /// use futures_lite::stream::StreamExt;
+        ///
+        /// # futures_lite::future::block_on(async {
+        /// let mut entries = async_fs::read_dir(".").await?;
+        ///
+        /// while let Some(entry) = entries.try_next().await? {
+        ///     println!("{:?}: {}", entry.file_name(), entry.ino());
+        /// }
+        /// # std::io::Result::Ok(()) });
+        /// ```
+        fn ino(&self) -> u64;
+    }
+
+    /// Unix-specific extensions to [`OpenOptions`].
+    pub trait OpenOptionsExt {
+        /// Sets the mode bits that a new file will be created with.
+        ///
+        /// If a new file is created as part of an [`OpenOptions::open()`] call then this
+        /// specified `mode` will be used as the permission bits for the new file.
+        ///
+        /// If no `mode` is set, the default of `0o666` will be used.
+        /// The operating system masks out bits with the system's `umask`, to produce
+        /// the final permissions.
+        ///
+        /// # Examples
+        ///
+        /// ```no_run
+        /// use async_fs::{OpenOptions, unix::OpenOptionsExt};
+        ///
+        /// # futures_lite::future::block_on(async {
+        /// let mut options = OpenOptions::new();
+        /// // Read/write permissions for owner and read permissions for others.
+        /// options.mode(0o644);
+        /// let file = options.open("foo.txt").await?;
+        /// # std::io::Result::Ok(()) });
+        /// ```
+        fn mode(&mut self, mode: u32) -> &mut Self;
+
+        /// Passes custom flags to the `flags` argument of `open`.
+        ///
+        /// The bits that define the access mode are masked out with `O_ACCMODE`, to
+        /// ensure they do not interfere with the access mode set by Rust's options.
+        ///
+        /// Custom flags can only set flags, not remove flags set by Rust's options.
+        /// This options overwrites any previously set custom flags.
+        ///
+        /// # Examples
+        ///
+        /// ```no_run
+        /// use async_fs::{OpenOptions, unix::OpenOptionsExt};
+        ///
+        /// # futures_lite::future::block_on(async {
+        /// let mut options = OpenOptions::new();
+        /// options.write(true);
+        /// options.custom_flags(libc::O_NOFOLLOW);
+        /// let file = options.open("foo.txt").await?;
+        /// # std::io::Result::Ok(()) });
+        /// ```
+        fn custom_flags(&mut self, flags: i32) -> &mut Self;
+    }
 }
 
 /// Windows-specific extensions.
@@ -1502,7 +1587,7 @@ pub mod windows {
     use super::*;
 
     #[doc(no_inline)]
-    pub use std::os::windows::fs::{MetadataExt, OpenOptionsExt};
+    pub use std::os::windows::fs::MetadataExt;
 
     /// Creates a new directory symbolic link on the filesystem.
     ///
@@ -1536,5 +1621,160 @@ pub mod windows {
         let src = src.as_ref().to_owned();
         let dst = dst.as_ref().to_owned();
         unblock(move || std::os::windows::fs::symlink_file(&src, &dst)).await
+    }
+
+    /// Windows-specific extensions to [`OpenOptions`].
+    pub trait OpenOptionsExt {
+        /// Overrides the `dwDesiredAccess` argument to the call to [`CreateFile`]
+        /// with the specified value.
+        ///
+        /// This will override the `read`, `write`, and `append` flags on the
+        /// [`OpenOptions`] structure. This method provides fine-grained control over
+        /// the permissions to read, write and append data, attributes (like hidden
+        /// and system), and extended attributes.
+        ///
+        /// # Examples
+        ///
+        /// ```no_run
+        /// use async_fs::{OpenOptions, windows::OpenOptionsExt};
+        ///
+        /// # futures_lite::future::block_on(async {
+        /// // Open without read and write permission, for example if you only need
+        /// // to call `stat` on the file
+        /// let file = OpenOptions::new().access_mode(0).open("foo.txt").await?;
+        /// # std::io::Result::Ok(()) });
+        /// ```
+        ///
+        /// [`CreateFile`]: https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilea
+        fn access_mode(&mut self, access: u32) -> &mut Self;
+
+        /// Overrides the `dwShareMode` argument to the call to [`CreateFile`] with
+        /// the specified value.
+        ///
+        /// By default `share_mode` is set to
+        /// `FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE`. This allows
+        /// other processes to read, write, and delete/rename the same file
+        /// while it is open. Removing any of the flags will prevent other
+        /// processes from performing the corresponding operation until the file
+        /// handle is closed.
+        ///
+        /// # Examples
+        ///
+        /// ```no_run
+        /// use async_fs::{OpenOptions, windows::OpenOptionsExt};
+        ///
+        /// # futures_lite::future::block_on(async {
+        /// // Do not allow others to read or modify this file while we have it open
+        /// // for writing.
+        /// let file = OpenOptions::new()
+        ///     .write(true)
+        ///     .share_mode(0)
+        ///     .open("foo.txt")
+        ///     .await?;
+        /// # std::io::Result::Ok(()) });
+        /// ```
+        ///
+        /// [`CreateFile`]: https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilea
+        fn share_mode(&mut self, val: u32) -> &mut Self;
+
+        /// Sets extra flags for the `dwFileFlags` argument to the call to
+        /// [`CreateFile2`] to the specified value (or combines it with
+        /// `attributes` and `security_qos_flags` to set the `dwFlagsAndAttributes`
+        /// for [`CreateFile`]).
+        ///
+        /// Custom flags can only set flags, not remove flags set by Rust's options.
+        /// This option overwrites any previously set custom flags.
+        ///
+        /// # Examples
+        ///
+        /// ```no_run
+        /// use async_fs::{OpenOptions, windows::OpenOptionsExt};
+        ///
+        /// # futures_lite::future::block_on(async {
+        /// let file = OpenOptions::new()
+        ///     .create(true)
+        ///     .write(true)
+        ///     .custom_flags(winapi::um::winbase::FILE_FLAG_DELETE_ON_CLOSE)
+        ///     .open("foo.txt")
+        ///     .await?;
+        /// # std::io::Result::Ok(()) });
+        /// ```
+        ///
+        /// [`CreateFile`]: https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilea
+        /// [`CreateFile2`]: https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfile2
+        fn custom_flags(&mut self, flags: u32) -> &mut Self;
+
+        /// Sets the `dwFileAttributes` argument to the call to [`CreateFile2`] to
+        /// the specified value (or combines it with `custom_flags` and
+        /// `security_qos_flags` to set the `dwFlagsAndAttributes` for
+        /// [`CreateFile`]).
+        ///
+        /// If a _new_ file is created because it does not yet exist and
+        /// `.create(true)` or `.create_new(true)` are specified, the new file is
+        /// given the attributes declared with `.attributes()`.
+        ///
+        /// If an _existing_ file is opened with `.create(true).truncate(true)`, its
+        /// existing attributes are preserved and combined with the ones declared
+        /// with `.attributes()`.
+        ///
+        /// In all other cases the attributes get ignored.
+        ///
+        /// # Examples
+        ///
+        /// ```no_run
+        /// use async_fs::{OpenOptions, windows::OpenOptionsExt};
+        ///
+        /// # futures_lite::future::block_on(async {
+        /// let file = OpenOptions::new()
+        ///     .write(true)
+        ///     .create(true)
+        ///     .attributes(winapi::um::winnt::FILE_ATTRIBUTE_HIDDEN)
+        ///     .open("foo.txt")
+        ///     .await?;
+        /// # std::io::Result::Ok(()) });
+        /// ```
+        ///
+        /// [`CreateFile`]: https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilea
+        /// [`CreateFile2`]: https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfile2
+        fn attributes(&mut self, val: u32) -> &mut Self;
+
+        /// Sets the `dwSecurityQosFlags` argument to the call to [`CreateFile2`] to
+        /// the specified value (or combines it with `custom_flags` and `attributes`
+        /// to set the `dwFlagsAndAttributes` for [`CreateFile`]).
+        ///
+        /// By default `security_qos_flags` is not set. It should be specified when
+        /// opening a named pipe, to control to which degree a server process can
+        /// act on behalf of a client process (security impersonation level).
+        ///
+        /// When `security_qos_flags` is not set, a malicious program can gain the
+        /// elevated privileges of a privileged Rust process when it allows opening
+        /// user-specified paths, by tricking it into opening a named pipe. So
+        /// arguably `security_qos_flags` should also be set when opening arbitrary
+        /// paths. However the bits can then conflict with other flags, specifically
+        /// `FILE_FLAG_OPEN_NO_RECALL`.
+        ///
+        /// For information about possible values, see [Impersonation Levels] on the
+        /// Windows Dev Center site. The `SECURITY_SQOS_PRESENT` flag is set
+        /// automatically when using this method.
+        ///
+        /// # Examples
+        ///
+        /// ```no_run
+        /// use async_fs::{OpenOptions, windows::OpenOptionsExt};
+        ///
+        /// # futures_lite::future::block_on(async {
+        /// let file = OpenOptions::new()
+        ///     .write(true)
+        ///     .create(true)
+        ///     .security_qos_flags(winapi::um::winbase::SECURITY_IDENTIFICATION)
+        ///     .open(r"\\.\pipe\MyPipe")
+        ///     .await?;
+        /// # std::io::Result::Ok(()) });
+        /// ```
+        ///
+        /// [`CreateFile`]: https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilea
+        /// [`CreateFile2`]: https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfile2
+        /// [Impersonation Levels]: https://docs.microsoft.com/en-us/windows/win32/api/winnt/ne-winnt-security_impersonation_level
+        fn security_qos_flags(&mut self, flags: u32) -> &mut Self;
     }
 }

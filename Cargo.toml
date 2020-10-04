@@ -15,3 +15,9 @@ readme = "README.md"
 [dependencies]
 blocking = "1.0.0"
 futures-lite = "1.2.0"
+
+[target.'cfg(unix)'.dev-dependencies]
+libc = "0.2.78"
+
+[target.'cfg(windows)'.dev-dependencies]
+winapi = "0.3.9"
