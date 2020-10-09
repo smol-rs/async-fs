@@ -13,6 +13,7 @@ categories = ["asynchronous", "concurrency"]
 readme = "README.md"
 
 [dependencies]
+async-lock = "2.3.0"
 blocking = "1.0.0"
 futures-lite = "1.2.0"
 

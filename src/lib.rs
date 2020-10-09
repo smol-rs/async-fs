@@ -40,6 +40,7 @@ use std::os::unix::fs::{DirEntryExt as _, OpenOptionsExt as _};
 #[cfg(windows)]
 use std::os::windows::fs::OpenOptionsExt as _;
 
+use async_lock::Mutex;
 use blocking::{unblock, Unblock};
 use futures_lite::io::{AsyncRead, AsyncSeek, AsyncWrite, AsyncWriteExt};
 use futures_lite::stream::Stream;
@@ -820,7 +821,7 @@ pub struct File {
     file: Arc<std::fs::File>,
 
     /// Performs blocking I/O operations on a thread pool.
-    unblock: Unblock<ArcFile>,
+    unblock: Mutex<Unblock<ArcFile>>,
 
     /// Logical file cursor, tracked when reading from the file.
     ///
@@ -835,7 +836,7 @@ impl File {
     /// Creates an async file from a blocking file.
     fn new(inner: std::fs::File, is_dirty: bool) -> File {
         let file = Arc::new(inner);
-        let unblock = Unblock::new(ArcFile(file.clone()));
+        let unblock = Mutex::new(Unblock::new(ArcFile(file.clone())));
         let read_pos = None;
         File {
             file,
@@ -925,8 +926,9 @@ impl File {
     /// file.sync_all().await?;
     /// # std::io::Result::Ok(()) });
     /// ```
-    pub async fn sync_all(&mut self) -> io::Result<()> {
-        self.flush().await?;
+    pub async fn sync_all(&self) -> io::Result<()> {
+        let mut inner = self.unblock.lock().await;
+        inner.flush().await?;
         let file = self.file.clone();
         unblock(move || file.sync_all()).await
     }
@@ -955,8 +957,9 @@ impl File {
     /// file.sync_data().await?;
     /// # std::io::Result::Ok(()) });
     /// ```
-    pub async fn sync_data(&mut self) -> io::Result<()> {
-        self.flush().await?;
+    pub async fn sync_data(&self) -> io::Result<()> {
+        let mut inner = self.unblock.lock().await;
+        inner.flush().await?;
         let file = self.file.clone();
         unblock(move || file.sync_data()).await
     }
@@ -980,8 +983,9 @@ impl File {
     /// file.set_len(10).await?;
     /// # std::io::Result::Ok(()) });
     /// ```
-    pub async fn set_len(&mut self, size: u64) -> io::Result<()> {
-        self.flush().await?;
+    pub async fn set_len(&self, size: u64) -> io::Result<()> {
+        let mut inner = self.unblock.lock().await;
+        inner.flush().await?;
         let file = self.file.clone();
         unblock(move || file.set_len(size)).await
     }
@@ -1040,7 +1044,7 @@ impl File {
     /// cursor must first be repositioned back to the correct logical position.
     fn poll_reposition(&mut self, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         if let Some(Ok(read_pos)) = self.read_pos {
-            ready!(Pin::new(&mut self.unblock).poll_seek(cx, SeekFrom::Start(read_pos)))?;
+            ready!(Pin::new(self.unblock.get_mut()).poll_seek(cx, SeekFrom::Start(read_pos)))?;
         }
         self.read_pos = None;
         Poll::Ready(Ok(()))
@@ -1099,7 +1103,7 @@ impl AsyncRead for File {
             self.read_pos = Some(ready!(self.as_mut().poll_seek(cx, SeekFrom::Current(0))));
         }
 
-        let n = ready!(Pin::new(&mut self.unblock).poll_read(cx, buf))?;
+        let n = ready!(Pin::new(self.unblock.get_mut()).poll_read(cx, buf))?;
 
         // Update the logical cursor if the file is seekable.
         if let Some(Ok(pos)) = self.read_pos.as_mut() {
@@ -1118,19 +1122,19 @@ impl AsyncWrite for File {
     ) -> Poll<io::Result<usize>> {
         ready!(self.poll_reposition(cx))?;
         self.is_dirty = true;
-        Pin::new(&mut self.unblock).poll_write(cx, buf)
+        Pin::new(self.unblock.get_mut()).poll_write(cx, buf)
     }
 
     fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         if self.is_dirty {
-            ready!(Pin::new(&mut self.unblock).poll_flush(cx))?;
+            ready!(Pin::new(self.unblock.get_mut()).poll_flush(cx))?;
             self.is_dirty = false;
         }
         Poll::Ready(Ok(()))
     }
 
     fn poll_close(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        Pin::new(&mut self.unblock).poll_close(cx)
+        Pin::new(self.unblock.get_mut()).poll_close(cx)
     }
 }
 
@@ -1141,7 +1145,7 @@ impl AsyncSeek for File {
         pos: SeekFrom,
     ) -> Poll<io::Result<u64>> {
         ready!(self.poll_reposition(cx))?;
-        Pin::new(&mut self.unblock).poll_seek(cx, pos)
+        Pin::new(self.unblock.get_mut()).poll_seek(cx, pos)
     }
 }
 
