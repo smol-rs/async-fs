@@ -1,3 +1,10 @@
+# Version 1.5.0
+
+- Replace `&mut self` with `&self` on the following methods:
+    - `File::sync_data()`
+    - `File::sync_all()`
+    - `File::set_len()`
+
 # Version 1.4.0
 
 - Define new extension traits instead of implementing those from `std`.
