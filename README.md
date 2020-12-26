@@ -1,9 +1,9 @@
 # async-fs
 
-[![Build](https://github.com/stjepang/async-fs/workflows/Build%20and%20test/badge.svg)](
-https://github.com/stjepang/async-fs/actions)
+[![Build](https://github.com/smol-rs/async-fs/workflows/Build%20and%20test/badge.svg)](
+https://github.com/smol-rs/async-fs/actions)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](
-https://github.com/stjepang/async-fs)
+https://github.com/smol-rs/async-fs)
 [![Cargo](https://img.shields.io/crates/v/async-fs.svg)](
 https://crates.io/crates/async-fs)
 [![Documentation](https://docs.rs/async-fs/badge.svg)](
