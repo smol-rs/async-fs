@@ -10,7 +10,6 @@ homepage = "https://github.com/smol-rs/async-fs"
 documentation = "https://docs.rs/async-fs"
 keywords = ["asynchronous", "file", "filesystem", "io"]
 categories = ["asynchronous", "concurrency"]
-readme = "README.md"
 
 [dependencies]
 async-lock = "2.3.0"
