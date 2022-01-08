@@ -338,7 +338,7 @@ impl DirEntry {
     /// # std::io::Result::Ok(()) });
     /// ```
     pub fn path(&self) -> PathBuf {
-        self.0.path().into()
+        self.0.path()
     }
 
     /// Reads the metadata for this entry.
