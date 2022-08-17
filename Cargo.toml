@@ -21,6 +21,9 @@ async-lock = "2.3.0"
 blocking = "1.0.0"
 futures-lite = "1.2.0"
 
+[build-dependencies]
+autocfg = "1"
+
 [target.'cfg(unix)'.dev-dependencies]
 libc = "0.2.78"
 
