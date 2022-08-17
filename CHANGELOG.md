@@ -1,3 +1,7 @@
+# Version 1.6.0
+
+- Implement I/O safety traits on Rust 1.63+ (#13)
+
 # Version 1.5.0
 
 - Replace `&mut self` with `&self` on the following methods:
