@@ -71,7 +71,7 @@ pub use std::fs::{FileType, Metadata, Permissions};
 /// ```
 pub async fn canonicalize<P: AsRef<Path>>(path: P) -> io::Result<PathBuf> {
     let path = path.as_ref().to_owned();
-    unblock(move || std::fs::canonicalize(&path)).await
+    unblock(move || std::fs::canonicalize(path)).await
 }
 
 /// Copies a file to a new location.
@@ -129,7 +129,7 @@ pub async fn copy<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> io::Result<
 /// ```
 pub async fn create_dir<P: AsRef<Path>>(path: P) -> io::Result<()> {
     let path = path.as_ref().to_owned();
-    unblock(move || std::fs::create_dir(&path)).await
+    unblock(move || std::fs::create_dir(path)).await
 }
 
 /// Creates a directory and its parent directories if they are missing.
@@ -151,7 +151,7 @@ pub async fn create_dir<P: AsRef<Path>>(path: P) -> io::Result<()> {
 /// ```
 pub async fn create_dir_all<P: AsRef<Path>>(path: P) -> io::Result<()> {
     let path = path.as_ref().to_owned();
-    unblock(move || std::fs::create_dir_all(&path)).await
+    unblock(move || std::fs::create_dir_all(path)).await
 }
 
 /// Creates a hard link on the filesystem.
@@ -230,7 +230,7 @@ pub async fn metadata<P: AsRef<Path>>(path: P) -> io::Result<Metadata> {
 /// ```
 pub async fn read<P: AsRef<Path>>(path: P) -> io::Result<Vec<u8>> {
     let path = path.as_ref().to_owned();
-    unblock(move || std::fs::read(&path)).await
+    unblock(move || std::fs::read(path)).await
 }
 
 /// Returns a stream of entries in a directory.
@@ -261,7 +261,7 @@ pub async fn read<P: AsRef<Path>>(path: P) -> io::Result<Vec<u8>> {
 /// ```
 pub async fn read_dir<P: AsRef<Path>>(path: P) -> io::Result<ReadDir> {
     let path = path.as_ref().to_owned();
-    unblock(move || std::fs::read_dir(&path).map(|inner| ReadDir(State::Idle(Some(inner))))).await
+    unblock(move || std::fs::read_dir(path).map(|inner| ReadDir(State::Idle(Some(inner))))).await
 }
 
 /// A stream of entries in a directory.
@@ -463,7 +463,7 @@ impl unix::DirEntryExt for DirEntry {
 /// ```
 pub async fn read_link<P: AsRef<Path>>(path: P) -> io::Result<PathBuf> {
     let path = path.as_ref().to_owned();
-    unblock(move || std::fs::read_link(&path)).await
+    unblock(move || std::fs::read_link(path)).await
 }
 
 /// Reads the entire contents of a file as a string.
@@ -492,7 +492,7 @@ pub async fn read_link<P: AsRef<Path>>(path: P) -> io::Result<PathBuf> {
 /// ```
 pub async fn read_to_string<P: AsRef<Path>>(path: P) -> io::Result<String> {
     let path = path.as_ref().to_owned();
-    unblock(move || std::fs::read_to_string(&path)).await
+    unblock(move || std::fs::read_to_string(path)).await
 }
 
 /// Removes an empty directory.
@@ -517,7 +517,7 @@ pub async fn read_to_string<P: AsRef<Path>>(path: P) -> io::Result<String> {
 /// ```
 pub async fn remove_dir<P: AsRef<Path>>(path: P) -> io::Result<()> {
     let path = path.as_ref().to_owned();
-    unblock(move || std::fs::remove_dir(&path)).await
+    unblock(move || std::fs::remove_dir(path)).await
 }
 
 /// Removes a directory and all of its contents.
@@ -539,7 +539,7 @@ pub async fn remove_dir<P: AsRef<Path>>(path: P) -> io::Result<()> {
 /// ```
 pub async fn remove_dir_all<P: AsRef<Path>>(path: P) -> io::Result<()> {
     let path = path.as_ref().to_owned();
-    unblock(move || std::fs::remove_dir_all(&path)).await
+    unblock(move || std::fs::remove_dir_all(path)).await
 }
 
 /// Removes a file.
@@ -561,7 +561,7 @@ pub async fn remove_dir_all<P: AsRef<Path>>(path: P) -> io::Result<()> {
 /// ```
 pub async fn remove_file<P: AsRef<Path>>(path: P) -> io::Result<()> {
     let path = path.as_ref().to_owned();
-    unblock(move || std::fs::remove_file(&path)).await
+    unblock(move || std::fs::remove_file(path)).await
 }
 
 /// Renames a file or directory to a new location.
@@ -871,7 +871,7 @@ impl File {
     /// ```
     pub async fn open<P: AsRef<Path>>(path: P) -> io::Result<File> {
         let path = path.as_ref().to_owned();
-        let file = unblock(move || std::fs::File::open(&path)).await?;
+        let file = unblock(move || std::fs::File::open(path)).await?;
         Ok(File::new(file, false))
     }
 
@@ -902,7 +902,7 @@ impl File {
     /// ```
     pub async fn create<P: AsRef<Path>>(path: P) -> io::Result<File> {
         let path = path.as_ref().to_owned();
-        let file = unblock(move || std::fs::File::create(&path)).await?;
+        let file = unblock(move || std::fs::File::create(path)).await?;
         Ok(File::new(file, false))
     }
 
