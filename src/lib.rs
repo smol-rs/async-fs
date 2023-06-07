@@ -1091,28 +1091,28 @@ impl std::os::windows::io::AsRawHandle for File {
     }
 }
 
-#[cfg(all(not(async_fs_no_io_safety), unix))]
+#[cfg(unix)]
 impl From<std::os::unix::io::OwnedFd> for File {
     fn from(fd: std::os::unix::io::OwnedFd) -> Self {
         File::from(std::fs::File::from(fd))
     }
 }
 
-#[cfg(all(not(async_fs_no_io_safety), windows))]
+#[cfg(windows)]
 impl From<std::os::windows::io::OwnedHandle> for File {
     fn from(fd: std::os::windows::io::OwnedHandle) -> Self {
         File::from(std::fs::File::from(fd))
     }
 }
 
-#[cfg(all(not(async_fs_no_io_safety), unix))]
+#[cfg(unix)]
 impl std::os::unix::io::AsFd for File {
     fn as_fd(&self) -> std::os::unix::io::BorrowedFd<'_> {
         self.file.as_fd()
     }
 }
 
-#[cfg(all(not(async_fs_no_io_safety), windows))]
+#[cfg(windows)]
 impl std::os::windows::io::AsHandle for File {
     fn as_handle(&self) -> std::os::windows::io::BorrowedHandle<'_> {
         self.file.as_handle()
