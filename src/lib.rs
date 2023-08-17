@@ -1507,9 +1507,20 @@ impl windows::OpenOptionsExt for OpenOptions {
     }
 }
 
+mod __private {
+    #[doc(hidden)]
+    pub trait Sealed {}
+
+    impl Sealed for super::OpenOptions {}
+    impl Sealed for super::File {}
+    impl Sealed for super::DirBuilder {}
+    impl Sealed for super::DirEntry {}
+}
+
 /// Unix-specific extensions.
 #[cfg(unix)]
 pub mod unix {
+    use super::__private::Sealed;
     use super::*;
 
     #[doc(no_inline)]
@@ -1533,7 +1544,7 @@ pub mod unix {
     }
 
     /// Unix-specific extensions to [`DirBuilder`].
-    pub trait DirBuilderExt {
+    pub trait DirBuilderExt: Sealed {
         /// Sets the mode to create new directories with.
         ///
         /// This option defaults to `0o777`.
@@ -1550,7 +1561,7 @@ pub mod unix {
     }
 
     /// Unix-specific extension methods for [`DirEntry`].
-    pub trait DirEntryExt {
+    pub trait DirEntryExt: Sealed {
         /// Returns the underlying `d_ino` field in the contained `dirent` structure.
         ///
         /// # Examples
@@ -1571,7 +1582,7 @@ pub mod unix {
     }
 
     /// Unix-specific extensions to [`OpenOptions`].
-    pub trait OpenOptionsExt {
+    pub trait OpenOptionsExt: Sealed {
         /// Sets the mode bits that a new file will be created with.
         ///
         /// If a new file is created as part of an [`OpenOptions::open()`] call then this
@@ -1622,6 +1633,7 @@ pub mod unix {
 /// Windows-specific extensions.
 #[cfg(windows)]
 pub mod windows {
+    use super::__private::Sealed;
     use super::*;
 
     #[doc(no_inline)]
@@ -1662,7 +1674,7 @@ pub mod windows {
     }
 
     /// Windows-specific extensions to [`OpenOptions`].
-    pub trait OpenOptionsExt {
+    pub trait OpenOptionsExt: Sealed {
         /// Overrides the `dwDesiredAccess` argument to the call to [`CreateFile`]
         /// with the specified value.
         ///
