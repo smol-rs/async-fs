@@ -1744,7 +1744,7 @@ pub mod windows {
         /// let file = OpenOptions::new()
         ///     .create(true)
         ///     .write(true)
-        ///     .custom_flags(winapi::um::winbase::FILE_FLAG_DELETE_ON_CLOSE)
+        ///     .custom_flags(windows_sys::Win32::Storage::FileSystem::FILE_FLAG_DELETE_ON_CLOSE)
         ///     .open("foo.txt")
         ///     .await?;
         /// # std::io::Result::Ok(()) });
@@ -1778,7 +1778,7 @@ pub mod windows {
         /// let file = OpenOptions::new()
         ///     .write(true)
         ///     .create(true)
-        ///     .attributes(winapi::um::winnt::FILE_ATTRIBUTE_HIDDEN)
+        ///     .attributes(windows_sys::Win32::Storage::FileSystem::FILE_ATTRIBUTE_HIDDEN)
         ///     .open("foo.txt")
         ///     .await?;
         /// # std::io::Result::Ok(()) });
@@ -1816,7 +1816,7 @@ pub mod windows {
         /// let file = OpenOptions::new()
         ///     .write(true)
         ///     .create(true)
-        ///     .security_qos_flags(winapi::um::winbase::SECURITY_IDENTIFICATION)
+        ///     .security_qos_flags(windows_sys::Win32::Storage::FileSystem::SECURITY_IDENTIFICATION)
         ///     .open(r"\\.\pipe\MyPipe")
         ///     .await?;
         /// # std::io::Result::Ok(()) });
