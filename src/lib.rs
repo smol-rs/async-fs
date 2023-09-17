@@ -48,9 +48,10 @@ use std::os::windows::fs::OpenOptionsExt as _;
 
 use async_lock::Mutex;
 use blocking::{unblock, Unblock};
+use futures_lite::future::FutureExt;
 use futures_lite::io::{AsyncRead, AsyncSeek, AsyncWrite, AsyncWriteExt};
+use futures_lite::ready;
 use futures_lite::stream::Stream;
-use futures_lite::{future, ready};
 
 #[doc(no_inline)]
 pub use std::fs::{FileType, Metadata, Permissions};
@@ -282,7 +283,7 @@ pub struct ReadDir(State);
 /// The `ReadDir` can be either idle or busy performing an asynchronous operation.
 enum State {
     Idle(Option<std::fs::ReadDir>),
-    Busy(future::Boxed<(std::fs::ReadDir, Option<io::Result<std::fs::DirEntry>>)>),
+    Busy(blocking::Task<(std::fs::ReadDir, Option<io::Result<std::fs::DirEntry>>)>),
 }
 
 impl fmt::Debug for ReadDir {
@@ -301,14 +302,14 @@ impl Stream for ReadDir {
                     let mut inner = opt.take().unwrap();
 
                     // Start the operation asynchronously.
-                    self.0 = State::Busy(Box::pin(unblock(move || {
+                    self.0 = State::Busy(unblock(move || {
                         let next = inner.next();
                         (inner, next)
-                    })));
+                    }));
                 }
                 // Poll the asynchronous operation the file is currently blocked on.
                 State::Busy(task) => {
-                    let (inner, opt) = ready!(task.as_mut().poll(cx));
+                    let (inner, opt) = ready!(task.poll(cx));
                     self.0 = State::Idle(Some(inner));
                     return Poll::Ready(opt.map(|res| res.map(|inner| DirEntry(Arc::new(inner)))));
                 }
