@@ -23,6 +23,7 @@
 //! # std::io::Result::Ok(()) });
 //! ```
 
+#![forbid(unsafe_code)]
 #![warn(missing_docs, missing_debug_implementations, rust_2018_idioms)]
 #![doc(
     html_favicon_url = "https://raw.githubusercontent.com/smol-rs/smol/master/assets/images/logo_fullsize_transparent.png"
@@ -1067,20 +1068,6 @@ impl fmt::Debug for File {
 impl From<std::fs::File> for File {
     fn from(inner: std::fs::File) -> File {
         File::new(inner, true)
-    }
-}
-
-#[cfg(unix)]
-impl std::os::unix::io::FromRawFd for File {
-    unsafe fn from_raw_fd(raw: std::os::unix::io::RawFd) -> File {
-        File::from(std::fs::File::from_raw_fd(raw))
-    }
-}
-
-#[cfg(windows)]
-impl std::os::windows::io::FromRawHandle for File {
-    unsafe fn from_raw_handle(raw: std::os::windows::io::RawHandle) -> File {
-        File::from(std::fs::File::from_raw_handle(raw))
     }
 }
 
