@@ -1,3 +1,11 @@
+# Version 2.0.0
+
+- **Breaking:** Seal extension traits. (#20)
+- **Breaking:** Remove unsafe implementations of the `FromRawFd`/`FromRawHandle` traits. (#26)
+- Avoid using a `build.rs` script for feature autodetection. (#17)
+- Remove the `autocfg` dependency. (#18)
+- Avoid a heap allocation in the `ReadDir` implementation. (#23)
+
 # Version 1.6.0
 
 - Implement I/O safety traits on Rust 1.63+ (#13)
