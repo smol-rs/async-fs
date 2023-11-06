@@ -1,3 +1,7 @@
+# Version 2.1.0
+
+- Bump `async-lock` and `futures-lite` to their latest versions. (#27, #28)
+
 # Version 2.0.0
 
 - **Breaking:** Seal extension traits. (#20)
