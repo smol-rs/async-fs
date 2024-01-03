@@ -1,7 +1,7 @@
 # async-fs
 
-[![Build](https://github.com/smol-rs/async-fs/workflows/Build%20and%20test/badge.svg)](
-https://github.com/smol-rs/async-fs/actions)
+[![CI](https://github.com/smol-rs/async-fs/actions/workflows/ci.yml/badge.svg)](
+https://github.com/smol-rs/async-fs/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0_OR_MIT-blue.svg)](
 https://github.com/smol-rs/async-fs)
 [![Cargo](https://img.shields.io/crates/v/async-fs.svg)](
