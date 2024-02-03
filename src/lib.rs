@@ -534,7 +534,7 @@ pub async fn remove_dir<P: AsRef<Path>>(path: P) -> io::Result<()> {
 ///
 /// An error will be returned in the following situations:
 ///
-/// * `path` is not an existing and empty directory.
+/// * `path` is not an existing directory.
 /// * The current process lacks permissions to remove the directory.
 /// * Some other I/O error occurred.
 ///
