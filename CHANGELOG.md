@@ -1,3 +1,7 @@
+# Version 2.1.1
+
+- Fix a copy/paste error in documentation. (#33)
+
 # Version 2.1.0
 
 - Bump `async-lock` and `futures-lite` to their latest versions. (#27, #28)
