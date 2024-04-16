@@ -140,15 +140,31 @@ pub async fn create_dir<P: AsRef<Path>>(path: P) -> io::Result<()> {
     unblock(move || std::fs::create_dir(path)).await
 }
 
-/// Creates a directory and its parent directories if they are missing.
+
+/// Creates a new, empty directory at the provided path
+///
+/// # Platform-specific behavior
+///
+/// This function currently corresponds to the `mkdir` function on Unix
+/// and the `CreateDirectory` function on Windows.
+/// Note that, this [may change in the future][changes].
+///
+/// [changes]: io#platform-specific-behavior
+///
+/// **NOTE**: If a parent of the given path doesn't exist, this function will
+/// return an error. To create a directory and all its missing parents at the
+/// same time, use the [`create_dir_all`] function.
 ///
 /// # Errors
 ///
-/// An error will be returned in the following situations:
+/// This function will return an error in the following situations, but is not
+/// limited to just these cases:
 ///
-/// * `path` already points to an existing file or directory.
-/// * The current process lacks permissions to create the directory or its missing parents.
-/// * Some other I/O error occurred.
+/// * User lacks permissions to create directory at `path`.
+/// * A parent of the given path doesn't exist. (To create a directory and all
+///   its missing parents at the same time, use the [`create_dir_all`]
+///   function.)
+/// * `path` already exists.
 ///
 /// # Examples
 ///
