@@ -140,7 +140,6 @@ pub async fn create_dir<P: AsRef<Path>>(path: P) -> io::Result<()> {
     unblock(move || std::fs::create_dir(path)).await
 }
 
-
 /// Creates a new, empty directory at the provided path
 ///
 /// # Platform-specific behavior
