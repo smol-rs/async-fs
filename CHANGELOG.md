@@ -1,3 +1,8 @@
+# Version 2.1.2
+
+- Ensure that the docs for `create_dir_all` are close to the equivalent function
+  in libstd. (#35)
+
 # Version 2.1.1
 
 - Fix a copy/paste error in documentation. (#33)
