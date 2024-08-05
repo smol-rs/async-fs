@@ -171,9 +171,9 @@ pub async fn create_dir<P: AsRef<Path>>(path: P) -> io::Result<()> {
 /// limited to just these cases:
 ///
 /// * If any directory in the path specified by `path`
-/// does not already exist and it could not be created otherwise. The specific
-/// error conditions for when a directory is being created (after it is
-/// determined to not exist) are outlined by [`fs::create_dir`].
+///   does not already exist and it could not be created otherwise. The specific
+///   error conditions for when a directory is being created (after it is
+///   determined to not exist) are outlined by [`fs::create_dir`].
 ///
 /// Notable exception is made for situations where any of the directories
 /// specified in the `path` could not be created as it was being created concurrently.
