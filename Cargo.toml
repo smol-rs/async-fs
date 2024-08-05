@@ -5,7 +5,7 @@ name = "async-fs"
 # - Create "v2.x.y" git tag
 version = "2.1.2"
 authors = ["Stjepan Glavina <stjepang@gmail.com>"]
-edition = "2018"
+edition = "2021"
 rust-version = "1.63"
 description = "Async filesystem primitives"
 license = "Apache-2.0 OR MIT"
