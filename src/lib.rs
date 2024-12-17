@@ -82,6 +82,33 @@ pub async fn canonicalize<P: AsRef<Path>>(path: P) -> io::Result<PathBuf> {
     unblock(move || std::fs::canonicalize(path)).await
 }
 
+/// Returns `Ok(true)` if the path points at an existing entity.
+///
+/// This function will traverse symbolic links to query information about the
+/// destination file. In case of broken symbolic links this will return `Ok(false)`.
+///
+/// [`try_exists`] only checks whether or not a path was both found and readable.
+///
+/// Note that while this avoids some pitfalls of the `exists()` method, it still can not
+/// prevent time-of-check to time-of-use (TOCTOU) bugs. You should only use it in scenarios
+/// where those bugs are not an issue.
+///
+/// This is the async equivalent of [std::path::Path::try_exists].
+///
+/// # Examples
+///
+/// ```no_run
+/// use std::path::Path;
+/// # futures_lite::future::block_on(async {
+/// assert!(!async_fs::try_exists(Path::new("does_not_exist.txt")).await.unwrap());
+/// assert!(!async_fs::try_exists(Path::new("exists.txt")).await.unwrap());
+/// # std::io::Result::Ok(()) });
+/// ```
+pub async fn try_exists<P: AsRef<Path>>(path: P) -> io::Result<bool> {
+    let path = path.as_ref().to_owned();
+    unblock(move || path.try_exists()).await
+}
+
 /// Copies a file to a new location.
 ///
 /// On success, the total number of bytes copied is returned and equals the length of the `dst`
