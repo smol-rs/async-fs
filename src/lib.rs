@@ -114,6 +114,35 @@ pub async fn copy<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> io::Result<
     unblock(move || std::fs::copy(&src, &dst)).await
 }
 
+/// Returns `Ok(true)` if the path points at an existing entity.
+///
+/// This function will traverse symbolic links to query information about the
+/// destination file. In case of broken symbolic links this will return `Ok(false)`.
+///
+/// As opposed to the [`Path::exists`] method, this will only return `Ok(true)` or `Ok(false)`
+/// if the path was _verified_ to exist or not exist. If its existence can neither be confirmed
+/// nor denied, an `Err(_)` will be propagated instead. This can be the case if e.g. listing
+/// permission is denied on one of the parent directories.
+///
+/// Note that while this avoids some pitfalls of the `exists()` method, it still can not
+/// prevent time-of-check to time-of-use (TOCTOU) bugs. You should only use it in scenarios
+/// where those bugs are not an issue.
+///
+/// # Examples
+///
+/// ```no_run
+/// # futures_lite::future::block_on(async {
+/// assert!(!async_fs::exists("does_not_exist.txt").await.expect("Can't check existence of file does_not_exist.txt"));
+/// assert!(async_fs::exists("/root/secret_file.txt").await.is_err());
+/// # std::io::Result::Ok(()); })
+/// ```
+///
+/// [`Path::exists`]: std::path::Path::exists
+pub async fn exists<P: AsRef<Path>>(path: P) -> io::Result<bool> {
+    let path = path.as_ref().to_owned();
+    unblock(move || std::fs::exists(path)).await
+}
+
 /// Creates a new, empty directory at the provided path
 ///
 /// # Platform-specific behavior

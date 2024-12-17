@@ -1,3 +1,7 @@
+# Version 2.1.3
+
+- Add `exists` function, which is an async wrapper for `std::fs::exists`.
+
 # Version 2.1.2
 
 - Ensure that the docs for `create_dir_all` are close to the equivalent function
