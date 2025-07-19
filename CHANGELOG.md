@@ -1,3 +1,7 @@
+# Version 2.1.3
+
+- Update `windows-sys` to v0.60. (#46)
+
 # Version 2.1.2
 
 - Ensure that the docs for `create_dir_all` are close to the equivalent function
