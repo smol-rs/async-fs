@@ -318,6 +318,7 @@ pub struct ReadDir(State);
 /// The state of an asynchronous `ReadDir`.
 ///
 /// The `ReadDir` can be either idle or busy performing an asynchronous operation.
+#[allow(clippy::large_enum_variant)] // TODO: Windows-specific
 enum State {
     Idle(Option<std::fs::ReadDir>),
     Busy(blocking::Task<(std::fs::ReadDir, Option<io::Result<std::fs::DirEntry>>)>),
