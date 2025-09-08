@@ -25,7 +25,7 @@ futures-lite = "2.0.0"
 libc = "0.2.78"
 
 [target.'cfg(windows)'.dev-dependencies.windows-sys]
-version = "0.60"
+version = "0.61"
 features = [
     "Win32_Storage_FileSystem",
 ]
