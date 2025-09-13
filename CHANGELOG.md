@@ -1,3 +1,8 @@
+# Version 2.2.0
+
+- Bump MSRV to 1.71. (#50)
+- Update to `windows-sys` v0.61. (#50)
+
 # Version 2.1.3
 
 - Update `windows-sys` to v0.60. (#46)
