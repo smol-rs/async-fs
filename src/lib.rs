@@ -120,11 +120,11 @@ pub async fn copy<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> io::Result<
 ///
 /// This function currently corresponds to the `mkdir` function on Unix
 /// and the `CreateDirectory` function on Windows.
-/// Note that, this [may change in the future][changes].
+/// Note that this [may change in the future][changes].
 ///
 /// [changes]: io#platform-specific-behavior
 ///
-/// **NOTE**: If a parent of the given path doesn't exist, this function will
+/// Note that if a parent of the given path doesn't exist, this function will
 /// return an error. To create a directory and all its missing parents at the
 /// same time, use the [`create_dir_all`] function.
 ///
@@ -161,7 +161,7 @@ pub async fn create_dir<P: AsRef<Path>>(path: P) -> io::Result<()> {
 ///
 /// This function currently corresponds to the `mkdir` function on Unix
 /// and the `CreateDirectory` function on Windows.
-/// Note that, this [may change in the future][changes].
+/// Note that this [may change in the future][changes].
 ///
 /// [changes]: io#platform-specific-behavior
 ///
@@ -980,14 +980,14 @@ impl File {
 
     /// Synchronizes OS-internal buffered contents to disk.
     ///
-    /// This is similar to [`sync_all()`][`File::sync_data()`], except that file metadata may not
+    /// This is similar to [`sync_all()`][`File::sync_all()`], except that file metadata may not
     /// be synchronized.
     ///
     /// This is intended for use cases that must synchronize the contents of the file, but don't
     /// need the file metadata synchronized to disk.
     ///
     /// Note that some platforms may simply implement this in terms of
-    /// [`sync_all()`][`File::sync_data()`].
+    /// [`sync_all()`][`File::sync_all()`].
     ///
     /// # Examples
     ///
