@@ -249,6 +249,32 @@ pub async fn metadata<P: AsRef<Path>>(path: P) -> io::Result<Metadata> {
     unblock(move || std::fs::metadata(path)).await
 }
 
+/// Returns `Ok(true)` if path exists.
+///
+/// This function will traverse symbolic links to check if the target file or directory exists.
+/// In case of a broken symbolc links this will return `Ok(false)`.
+///
+/// If the existence can neither be confirmed or denied, an `Err(_)` will be propagated instead.
+/// This can be the case if e.g. listing permission is denied on one of the parent directories
+///
+/// Note that while this avoids some pitfalls of the `exists()` method, it still can not
+/// prevent time-of-check to time-of-use bugs. You should only use it in scenarios
+/// where those bugs are not an issue.
+///
+/// ```no_run
+/// # futures_lite::future::block_on(async {
+/// assert!(!async_fs::exists("does_not_exist.txt").await.expect("Can't check existence of file does_not_exist.txt"));
+/// assert!(async_fs::exists("/root/secret_file.txt").await.is_err());
+/// # std::io::Result::Ok(()) });
+/// ```
+pub async fn exists<P: AsRef<Path>>(path: P) -> io::Result<bool> {
+    match metadata(path).await {
+        Ok(_) => Ok(true),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(false),
+        Err(error) => Err(error),
+    }
+}
+
 /// Reads the entire contents of a file as raw bytes.
 ///
 /// This is a convenience function for reading entire files. It pre-allocates a buffer based on the
