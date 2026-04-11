@@ -1094,6 +1094,29 @@ impl File {
         self.read_pos = None;
         Poll::Ready(Ok(()))
     }
+
+    /// Returns the inner blocking file, if no task is running.
+    ///
+    /// This will flush any pending data I/O tasks before attempting to unwrap, it will fail
+    /// if there are pending metadata tasks. Note that dropping futures does not cancel file
+    /// tasks, you must await all pending futures for this conversion to succeed.
+    pub async fn try_unwrap(self) -> Result<std::fs::File, Self> {
+        // flush Unblock and drop its reference
+        let _ = self.unblock.into_inner().into_inner().await;
+
+        match Arc::try_unwrap(self.file) {
+            Ok(ready) => Ok(ready),
+            Err(pending) => {
+                // task associated with dropped future is still running
+                Err(Self {
+                    file: pending.clone(),
+                    unblock: Mutex::new(Unblock::new(ArcFile(pending))),
+                    is_dirty: false,
+                    read_pos: self.read_pos,
+                })
+            }
+        }
+    }
 }
 
 impl fmt::Debug for File {
