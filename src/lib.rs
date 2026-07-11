@@ -388,10 +388,9 @@ impl DirEntry {
 
     /// Reads the metadata for this entry.
     ///
-    /// This function will traverse symbolic links to read the metadata.
+    /// This function will not traverse symbolic links if this entry points at one.
     ///
-    /// If you want to read metadata without following symbolic links, use [`symlink_metadata()`]
-    /// instead.
+    /// If you want to read metadata with following symbolic links, use [`metadata()`] instead.
     ///
     /// # Errors
     ///
