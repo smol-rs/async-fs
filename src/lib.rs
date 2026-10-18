@@ -950,6 +950,36 @@ impl File {
         Ok(File::new(file, false))
     }
 
+    /// Creates a new file in read-write mode.
+    ///
+    /// This method fails if the file already exists. The check and creation are
+    /// atomic, so another process cannot create the file between these operations.
+    /// If `path` is a symbolic link, this method also fails, even if the link is
+    /// dangling.
+    ///
+    /// See the [`OpenOptions::open()`] function for more options.
+    ///
+    /// # Errors
+    ///
+    /// An error will be returned if the file already exists, its parent directory
+    /// does not exist, or the current process lacks permissions to create it.
+    /// Other I/O errors may also be returned.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use async_fs::File;
+    ///
+    /// # futures_lite::future::block_on(async {
+    /// let file = File::create_new("a.txt").await?;
+    /// # std::io::Result::Ok(()) });
+    /// ```
+    pub async fn create_new<P: AsRef<Path>>(path: P) -> io::Result<File> {
+        let path = path.as_ref().to_owned();
+        let file = unblock(move || std::fs::File::create_new(path)).await?;
+        Ok(File::new(file, false))
+    }
+
     /// Synchronizes OS-internal buffered contents and metadata to disk.
     ///
     /// This function will ensure that all in-memory data reaches the filesystem.
